@@ -64,13 +64,17 @@
   `(when (looking-at ,re) (goto-char (match-end 0)) t))
 
 (defvar rust-char-table
-  (let ((table (make-char-table 'rust)))
+  (let ((table (make-char-table 'syntax-table)))
     (macrolet ((def (range &rest body)
                     `(let ((--b (lambda (st) ,@body)))
-                       ,@(mapcar (lambda (elt) `(set-char-table-range table ',elt --b))
+                       ,@(mapcar (lambda (elt)
+	                           (if (consp elt)
+                                       `(loop for ch from ,(car elt) to ,(cdr elt) collect
+                                              (set-char-table-range table ch --b))
+                                     `(set-char-table-range table ',elt --b)))
                                  (if (consp range) range (list range))))))
       (def t (forward-char) nil)
-      (def (?\s ?\t) (skip-chars-forward " \t") nil)
+      (def (32 ?\t) (skip-chars-forward " \t") nil)
       (def ?\" (forward-char)
            (rust-push-context st 'string 0 t)
            (setf (rust-state-tokenize st) 'rust-token-string)
