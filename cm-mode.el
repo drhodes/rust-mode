@@ -137,33 +137,35 @@
         (unless modified
           (restore-buffer-modified-p nil))))))
 
+(defun cm-do-some-work-inner ()
+  (let ((end-time (time-add (current-time) (list 0 0 500)))
+        (quitting nil))
+    (while (and (not quitting) cm-worklist)
+      (goto-char (cm-min-worklist-item))
+      (let ((state (cm-find-state-before-point))
+            (startpos (point))
+            (timer-idle-list nil))
+        (loop
+         (cm-highlight-line state)
+         (when (= (point) (point-max)) (return))
+         (let ((old (get-text-property (point) 'cm-parse-state)))
+           (when (and old (funcall (cm-mode-compare-state cm-cur-mode) state old))
+             (return))
+           (put-text-property (point) (+ (point) 1) 'cm-parse-state
+                              (funcall (cm-mode-copy-state cm-cur-mode) state)))
+         (when (or (let ((timer-idle-list nil)) (input-pending-p))
+                   (time-less-p end-time (current-time)))
+           (setf quitting t) (return))
+         (forward-char))
+        (cm-clear-work-items startpos (point)))
+      (when quitting
+        (push (copy-marker (+ (point) 1)) cm-worklist)
+        (cm-schedule-work 0.05)))))
+
 (defun cm-do-some-work ()
-  (condition-case err
-    (let ((end-time (time-add (current-time) (list 0 0 500)))
-          (quitting nil))
-    (save-excursion
-      (while (and (not quitting) cm-worklist)
-        (goto-char (cm-min-worklist-item))
-        (let ((state (cm-find-state-before-point))
-              (startpos (point))
-              (timer-idle-list nil))
-          (loop
-           (cm-highlight-line state)
-           (when (= (point) (point-max)) (return))
-           (let ((old (get-text-property (point) 'cm-parse-state)))
-             (when (and old (funcall (cm-mode-compare-state cm-cur-mode) state old))
-               (return))
-             (put-text-property (point) (+ (point) 1) 'cm-parse-state
-                                (funcall (cm-mode-copy-state cm-cur-mode) state)))
-           (when (or (let ((timer-idle-list nil)) (input-pending-p))
-                     (time-less-p end-time (current-time)))
-             (setf quitting t) (return))
-           (forward-char))
-          (cm-clear-work-items startpos (point)))
-        (when quitting
-          (push (copy-marker (+ (point) 1)) cm-worklist)
-          (cm-schedule-work 0.05))))
-    (error (print (error-message-string err))))))
+  (save-excursion 
+    (condition-case cnd (cm-do-some-work-inner)
+      (error (print cnd) (error cnd)))))
 
 (defun cm-after-change-function (from to oldlen)
   (cm-preserve-state (current-buffer) 'remove-text-properties from to '(cm-parse-state))
