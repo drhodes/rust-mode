@@ -175,13 +175,7 @@
     (when (bolp)
       (setf (rust-state-indent st) (current-indentation))
       (when (eq (rust-context-align cx) 'unset)
-        (setf (rust-context-align cx) nil))
-      (when (and (eq (rust-state-last-token st) 'pipe)
-                 (eq (rust-next-block-info st) 'block))
-        (rust-pop-context st)
-        (setf cx (rust-dup-context st)
-              (rust-context-info cx) nil
-              (rust-context-align cx) nil)))
+        (setf (rust-context-align cx) nil)))
     (setf rust-tcat nil)
     (let* ((tok (funcall (rust-state-tokenize st) st))
            (tok-id (or tok rust-tcat))
@@ -236,6 +230,12 @@
                     (let ((cx (rust-push-context st 'statement)))
                       (when (equal tok-id 'alt) (setf (rust-context-info cx) 'alt-1)))))))
         (setf (rust-state-last-token st) tok-id))
+      (when (and (eq (rust-state-last-token st) 'pipe)
+                 (eq (rust-next-block-info st) 'block) (eolp))
+        (when (eq (rust-context-type cx) 'statement) (rust-pop-context st))
+        (setf cx (rust-dup-context st)
+              (rust-context-info cx) nil
+              (rust-context-align cx) nil))
       tok)))
 
 (defun rust-indent (st)
