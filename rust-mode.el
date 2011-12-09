@@ -241,7 +241,7 @@
 (defun rust-indent (st)
   (let* ((cx (let ((head (car (rust-state-context st))))
                (if (and (eq (rust-context-type head) 'statement)
-                        (or (eq (char-after) ?\}) (looking-at "with |{[ 	]*$")))
+                        (or (eq (char-after) ?\}) (looking-at "with \\|{[ 	]*$")))
                    (cadr (rust-state-context st)) head)))
          (closing (eq (rust-context-type cx) (char-after)))
          (unit (if (member (rust-context-info cx) '(alt-inner alt-outer))
