@@ -48,7 +48,7 @@
     (setf (rust-state-context st) (cons dup (cdr list)))
     dup))
 
-(defvar rust-operator-chars "+-/%=<>!*&|@~")
+(defvar rust-operator-chars "-+/%=<>!*&|@~^")
 (defvar rust-punc-chars "()[].,{}:;")
 (defvar rust-value-keywords
   (let ((table (make-hash-table :test 'equal)))
@@ -203,7 +203,7 @@
           (setf cx (rust-dup-context st))
           (setf (rust-context-info cx) 'block))
         (case rust-tcat
-          ((?\; ?: ?,) (when (eq cur-cx 'statement) (rust-pop-context st)))
+          ((?\; ?,) (when (eq cur-cx 'statement) (rust-pop-context st)))
           (?\{
            (when (and (eq cur-cx 'statement) (not (member cx-info '(alt-1 alt-2))))
              (rust-pop-context st))
