@@ -215,7 +215,9 @@
            (let ((newcx (rust-push-context st ?\] (current-column))))
              (when (eq rust-tcat 'open-attr)
                (setf (rust-context-info newcx) 'attr))))
-          (?\( (rust-push-context st ?\) (current-column)))
+          (?\( (rust-push-context st ?\) (current-column))
+               (when (eq (rust-context-info cx) 'attr)
+                 (setf (rust-context-info (car (rust-state-context st))) 'attr)))
           (?\} (when (eq cur-cx 'statement) (rust-pop-context st))
                (when (eq (rust-context-type (car (rust-state-context st))) ?})
                  (rust-pop-context st))
@@ -241,7 +243,9 @@
         (setf cx (rust-dup-context st)
               (rust-context-info cx) nil
               (rust-context-align cx) nil))
-      tok)))
+      (if (eq (rust-context-info cx) 'attr)
+          'font-lock-preprocessor-face
+        tok))))
 
 (defun rust-indent (st)
   (let ((cx (car (rust-state-context st)))
