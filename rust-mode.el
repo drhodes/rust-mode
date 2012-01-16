@@ -52,11 +52,11 @@
 (defvar rust-punc-chars "()[].,{}:;")
 (defvar rust-value-keywords
   (let ((table (make-hash-table :test 'equal)))
-    (dolist (word '("mod" "type" "resource" "fn" "tag" "obj"))
+    (dolist (word '("mod" "type" "resource" "fn" "tag" "iface" "impl"))
       (puthash word 'def table))
     (dolist (word '("if" "else" "while" "do" "for" "break" "cont" "ret" "be" "fail" "const"
                     "check" "assert" "claim" "prove" "native" "import" "export" "let" "log"
-                    "use"))
+                    "use" "pure" "unsafe"))
       (puthash word t table))
     (puthash "alt" 'alt table)
     (dolist (word '("true" "false")) (puthash word 'atom table))
